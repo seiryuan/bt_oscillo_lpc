@@ -24,7 +24,10 @@
 
 #include "uart.h"
 
-// data buffer for UART interrupt handler
+/* UART CTS-pin No. (17 for 824MAX, set -1 for No fLow control) */
+#define UART_CTS_PIN 1
+
+/* data buffer for UART interrupt handler */
 #define UART_BUFSIZE_RX 32
 uint8_t uartBuffRx[UART_BUFSIZE_RX];
 #define UART_BUFSIZE_TX 1024
@@ -38,11 +41,8 @@ void SysTick_Handler(void) {
 	tic_f = 1;
 }
 
-/* ADC Setup Info */
-static bool sequenceComplete;
-static bool thresholdCrossed;
-/* CH1 for 824MAX, CH2 for original board */
-#define BOARD_ADC_CH 1
+/* ADC Channel CH=1 for 824MAX, CH=2 for original board */
+#define BOARD_ADC_CH 2
 
 /* ADC default clock (clock = 25*SamplingRate) */
 int adc_clock = 1200000; //1.2MHz = 48k sample/sec
@@ -51,14 +51,17 @@ int adc_clock = 1200000; //1.2MHz = 48k sample/sec
 #define NFRAME 480 // number of sample per 1frame
 uint16_t adc_buff[NFRAME];
 
-/* Data transfer mode */
+static bool sequenceComplete;
+static bool thresholdCrossed;
+
+/* Oscillo Data transfer mode */
 #define XFER_BURST 0
 #define XFER_CONT 1
 int transfer_mode = XFER_BURST;
 int burst_length = NFRAME;
 int frame_count = 0;
 
-/* Trigger Mode */
+/* Oscillo Trigger Mode */
 #define TRIGGER_FREE 0
 #define TRIGGER_POSITIVE 1
 #define TRIGGER_NEGATIVE 2
@@ -68,7 +71,7 @@ uint32_t trigger_level = 512<<6; //Level (0-1023 , 512=center)<<6 (bit shift for
 #define WAIT_TRIGGER_OK 1
 #define WAIT_TRIGGER_ERR 0
 
-/* Run State */
+/* Oscillo Run State */
 #define STATE_STOP 0
 #define STATE_RUN 1
 #define STATE_SINGLE 2
@@ -447,7 +450,7 @@ int main(void) {
 	/* System Init */
 	SystemCoreClockUpdate();
 	adc_init();
-	uart_init(0, 4, 17, -1, 115200, uartBuffRx, UART_BUFSIZE_RX, uartBuffTx, UART_BUFSIZE_TX);
+	uart_init(0, 4, UART_CTS_PIN, -1, 115200, uartBuffRx, UART_BUFSIZE_RX, uartBuffTx, UART_BUFSIZE_TX);
 	set_burst_mode("1\n"); //default="B1\n"=5msec/divß
 
 	/* SysTick Timer for block interval (1/8fps = 125msec) */
