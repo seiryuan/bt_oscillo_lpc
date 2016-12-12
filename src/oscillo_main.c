@@ -317,16 +317,16 @@ void set_continuous_mode( char *buff) {
 	int rate;
 
 	switch(*buff) {
-	case '1':
+	case '0':
 		rate = 24;//24Hz=2sec/div
 		break;
-	case '2':
+	case '1':
 		rate = 48;//48Hz=1sec/div
 		break;
-	case '3':
+	case '2':
 		rate = 96;//96Hz=0.5sec/div
 		break;
-	case '4':
+	case '3':
 		rate = 480;//*not use*
 		break;
 	}
@@ -344,16 +344,16 @@ void set_burst_mode( char *buff ) {
 	int rate;
 
 	switch(*buff) {
-	case '1':
+	case '0':
 		rate = 9600;//9.6kHz=5msec/div
 		break;
-	case '2':
+	case '1':
 		rate = 48000;//48kHz=1msec/div
 		break;
-	case '3':
+	case '2':
 		rate = 96000;//96kHz=0.5msec/div
 		break;
-	case '4':
+	case '3':
 		rate = 192000;//not use (DMA is necessary)
 		break;
 	}
