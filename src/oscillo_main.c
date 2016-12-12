@@ -16,12 +16,7 @@
  * limitations under the License.
  */
 
- #if defined(NO_BOARD_LIB)
- #include "chip.h"
- #else
- #include "board.h"
- #endif
-
+#include "chip.h"
 #include "uart.h"
 
 /* UART CTS-pin No. (17 for 824MAX, set -1 for No fLow control) */
