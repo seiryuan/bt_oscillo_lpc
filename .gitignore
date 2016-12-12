@@ -1,4 +1,6 @@
 .DS_Store
+Debug/
+Release/
 *.launch
 *.ld
 *.axf
