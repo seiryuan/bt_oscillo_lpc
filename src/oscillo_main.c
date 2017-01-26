@@ -20,7 +20,7 @@
 #include "uart.h"
 
 /* UART CTS-pin No. (17 for 824MAX, set -1 for No fLow control) */
-#define UART_CTS_PIN 1
+#define UART_CTS_PIN -1
 
 /* data buffer for UART interrupt handler */
 #define UART_BUFSIZE_RX 32
@@ -37,7 +37,8 @@ void SysTick_Handler(void) {
 }
 
 /* ADC Channel CH=1 for 824MAX, CH=2 for original board */
-#define BOARD_ADC_CH 2
+#define DEFAULT_ADC_CH 2
+int adc_channel = DEFAULT_ADC_CH;
 
 /* ADC default clock (clock = 25*SamplingRate) */
 int adc_clock = 1200000; //1.2MHz = 48k sample/sec
@@ -88,7 +89,7 @@ void ADC_SEQA_IRQHandler(void)
 	}
 
 	/* Threshold crossing interrupt on ADC input channel */
-	if (pending & ADC_FLAGS_THCMP_MASK(BOARD_ADC_CH)) {
+	if (pending & ADC_FLAGS_THCMP_MASK(adc_channel)) {
 		thresholdCrossed = true;
 	}
 
@@ -109,15 +110,28 @@ void adc_init() {
 
 	// Setup sequencer for ADC2(20pin)
 	Chip_ADC_SetupSequencer(LPC_ADC, ADC_SEQA_IDX,
-							(ADC_SEQ_CTRL_CHANSEL(BOARD_ADC_CH) | ADC_SEQ_CTRL_MODE_EOS));
+		(ADC_SEQ_CTRL_CHANSEL(adc_channel) | ADC_SEQ_CTRL_MODE_EOS));
+
+	// pin configuration
 	Chip_Clock_EnablePeriphClock(SYSCTL_CLOCK_SWM);
-	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC0+BOARD_ADC_CH);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC0);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC1);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC2);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC3);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC4);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC5);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC6);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC7);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC8);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC9);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC10);
+	Chip_SWM_EnableFixedPin(SWM_FIXED_ADC11);
 	Chip_Clock_DisablePeriphClock(SYSCTL_CLOCK_SWM);
 
 	// Setup threshold
-	Chip_ADC_SetThrLowValue(LPC_ADC, 0, 0);
-	Chip_ADC_SetThrHighValue(LPC_ADC, 0, 0xFFF);
-	Chip_ADC_SelectTH0Channels(LPC_ADC, ADC_THRSEL_CHAN_SEL_THR1(BOARD_ADC_CH));
+	//Chip_ADC_SetThrLowValue(LPC_ADC, 0, 0);
+	//Chip_ADC_SetThrHighValue(LPC_ADC, 0, 0xFFF);
+	//Chip_ADC_SelectTH0Channels(LPC_ADC, ADC_THRSEL_CHAN_SEL_THR1(adc_channel));
 	//Chip_ADC_SetThresholdInt(LPC_ADC, BOARD_ADC_CH, ADC_INTEN_THCMP_CROSSING);
 
 	// Setup Interrupt
@@ -160,7 +174,7 @@ int wait_trigger() {
 	else if(trigger_mode == TRIGGER_POSITIVE) {
 		data_valid = 0;
 		while(data_valid == 0) {
-			raw_sample = LPC_ADC->DR[BOARD_ADC_CH];
+			raw_sample = LPC_ADC->DR[adc_channel];
 			data_valid = raw_sample & ADC_SEQ_GDAT_DATAVALID;
 		}
 		adc_new = raw_sample & 0xffc0;
@@ -168,7 +182,7 @@ int wait_trigger() {
 		while(count < WAIT_TRIGGER_LIMIT) {
 			data_valid = 0;
 			while(data_valid == 0) {
-				raw_sample = LPC_ADC->DR[BOARD_ADC_CH];
+				raw_sample = LPC_ADC->DR[adc_channel];
 				data_valid = raw_sample & ADC_SEQ_GDAT_DATAVALID;
 			}
 			adc_old = adc_new;
@@ -182,7 +196,7 @@ int wait_trigger() {
 	else if(trigger_mode == TRIGGER_NEGATIVE){
 		data_valid = 0;
 		while(data_valid == 0) {
-			raw_sample = LPC_ADC->DR[BOARD_ADC_CH];
+			raw_sample = LPC_ADC->DR[adc_channel];
 			data_valid = raw_sample & ADC_SEQ_GDAT_DATAVALID;
 		}
 		adc_new = raw_sample & 0xffc0;
@@ -190,7 +204,7 @@ int wait_trigger() {
 		while(count < WAIT_TRIGGER_LIMIT) {
 			data_valid = 0;
 			while(data_valid == 0) {
-				raw_sample = LPC_ADC->DR[BOARD_ADC_CH];
+				raw_sample = LPC_ADC->DR[adc_channel];
 				data_valid = raw_sample & ADC_SEQ_GDAT_DATAVALID;
 			}
 			adc_old = adc_new;
@@ -215,7 +229,7 @@ void read_block() {
 	for(i = 0; i < NFRAME; i++) {
 		data_valid = 0;
 		while(data_valid == 0) {
-			raw_sample = LPC_ADC->DR[BOARD_ADC_CH];
+			raw_sample = LPC_ADC->DR[adc_channel];
 			data_valid = raw_sample & ADC_SEQ_GDAT_DATAVALID;
 		}
 		adc_buff[i] = (uint16_t)raw_sample;
@@ -236,7 +250,7 @@ uint16_t read_sample() {
 
 	data_valid = 0;
 	while(data_valid == 0) {
-		raw_sample = LPC_ADC->DR[BOARD_ADC_CH];
+		raw_sample = LPC_ADC->DR[adc_channel];
 		data_valid = raw_sample & ADC_SEQ_GDAT_DATAVALID;
 	}
 	return (raw_sample&0xffc0)>>6;
@@ -378,6 +392,7 @@ void set_trigger_mode(char *buff) {
 		break;
 	}
 }
+
 void set_run_state(char *buff) {
 	switch(*buff) {
 	case '0':
@@ -403,9 +418,24 @@ void set_gpio_state(char *buff) {
 	case '1':
 		Chip_GPIO_SetPinState(LPC_GPIO_PORT, 0, 15, true);
 		break;
-
-
 	}
+}
+
+void set_adc_input(char *buff) {
+	if((*buff >= '0')&&(*buff <= '9')) {
+		adc_channel = *buff-'0';
+	}
+	else if(*buff == 'A') {
+		adc_channel = 10;
+	}
+	else if(*buff == 'B') {
+		adc_channel = 11;
+	}
+	// Change ADC channel
+	Chip_ADC_DisableSequencer(LPC_ADC, ADC_SEQA_IDX); //stop sequencer
+	Chip_ADC_SetupSequencer(LPC_ADC, ADC_SEQA_IDX,
+		(ADC_SEQ_CTRL_CHANSEL(adc_channel) | ADC_SEQ_CTRL_MODE_EOS)); //config SEQA_CTRL
+	Chip_ADC_EnableSequencer(LPC_ADC, ADC_SEQA_IDX); //restart sequencer
 }
 
 void exec_cmd(char *buff) {
@@ -426,6 +456,9 @@ void exec_cmd(char *buff) {
 		break;
 	case 'G':
 		set_gpio_state(buff+1);
+		break;
+	case 'A':
+		set_adc_input(buff+1);
 		break;
 	}
 }
