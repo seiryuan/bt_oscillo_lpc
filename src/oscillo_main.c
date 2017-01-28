@@ -19,8 +19,8 @@
 #include "chip.h"
 #include "uart.h"
 
-/* UART CTS-pin No. (17 for 824MAX, set -1 for No fLow control) */
-#define UART_CTS_PIN -1
+/* UART CTS-pin No. (1 for SSOP20, 26 for QFN33, set -1 for No fLow control) */
+#define UART_CTS_PIN 26
 
 /* data buffer for UART interrupt handler */
 #define UART_BUFSIZE_RX 32
@@ -36,7 +36,7 @@ void SysTick_Handler(void) {
 	tic_f = 1;
 }
 
-/* ADC Channel CH=1 for 824MAX, CH=2 for original board */
+/* ADC Channel (default = ADC2) */
 #define DEFAULT_ADC_CH 2
 int adc_channel = DEFAULT_ADC_CH;
 
