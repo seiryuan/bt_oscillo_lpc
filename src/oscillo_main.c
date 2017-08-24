@@ -20,7 +20,7 @@
 #include "uart.h"
 
 /* UART CTS-pin No. (1 for SSOP20, 26 for QFN33, set -1 for No fLow control) */
-#define UART_CTS_PIN 26
+#define UART_CTS_PIN -1
 
 /* data buffer for UART interrupt handler */
 #define UART_BUFSIZE_RX 32
